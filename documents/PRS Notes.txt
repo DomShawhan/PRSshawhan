@@ -1,0 +1,13 @@
+PRS Notes
+
+Questions:
+
+
+Database:
+  Sean said - not international  (3/6/2024)
+    strings are varchar - not nvarchar
+
+Backend:
+
+
+Client:
