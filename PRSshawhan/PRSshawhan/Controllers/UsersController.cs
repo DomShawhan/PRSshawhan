@@ -10,7 +10,7 @@ using PRSshawhan.Models;
 namespace PRSshawhan.Controllers
 {
     [Route("api/[controller]")]
-    [ApiController]
+    [ApiController] // converts to and from JSON on API calls
     public class UsersController : ControllerBase
     {
         private readonly PrsDbContext _context;

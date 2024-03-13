@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using PRSshawhan.Models;
 
@@ -18,6 +19,105 @@ namespace PRSshawhan.Controllers
         public RequestsController(PrsDbContext context)
         {
             _context = context;
+        }
+        // POST: api/requests/reject/{id}
+        [HttpPost("reject/{id}")]
+        public async Task<ActionResult<Request>> PostReject(int id, [FromBody]string reason)
+        {
+            //todo: only Reviewrs can Reject
+            try
+            {
+                var req = await _context.Requests.FindAsync(id);
+                if(req == null) { return NotFound("Request not found"); }
+
+                if(reason == null | reason == string.Empty) { return BadRequest(); }
+                if(req.Status.ToUpper() != PRSutilities.statusReview.ToUpper()) { return BadRequest(); }
+
+                req.Status = PRSutilities.statusRejected;
+                req.ReasonForRejection = reason;
+
+                await _context.SaveChangesAsync();
+
+                return req;
+            }
+            catch(SqlException sqlex)
+            {
+                return Problem($"SQL Error: {sqlex.Message}");
+            }
+            catch(Exception ex)
+            {
+                return Problem(ex.Message);
+            }
+        }
+        //POST: api/requests/approve/id
+        [HttpPost("approve/{id}")]
+        public async Task<ActionResult<Request>> PostApprove(int id)
+        {
+            try
+            {
+                var request = await _context.Requests.FindAsync(id);
+                if(request == null) { return NotFound(); }
+                if(request.Status.ToUpper() != PRSutilities.statusReview.ToUpper()) { return BadRequest(); }
+                request.Status = PRSutilities.statusApproved;
+                await _context.SaveChangesAsync();
+                return request;
+            }
+            catch (SqlException sqlex)
+            {
+                return Problem($"SQL Error: {sqlex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return Problem(ex.Message);
+            }
+        }
+
+        //GET: api/Requests/reviews/{userid}
+        [HttpGet("reviews/{userid}")]
+        public async Task<ActionResult<IEnumerable<Request>>> GetReviews(int userid)
+        {
+            try
+            {
+                var requests = await _context.Requests.Where(r => r.UserId != userid && r.Status.ToUpper() == PRSutilities.statusReview.ToUpper()).Include(r => r.User).ToListAsync();
+
+                return requests;
+            }
+            catch (SqlException sqlex)
+            {
+                return Problem($"SQL Error: {sqlex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return Problem(ex.Message);
+            }
+        }
+
+        //POST: api/requests/review/{id}
+        [HttpPost("review/{id}")]
+        public async Task<ActionResult<Request>> PostReviews(int id)
+        {
+            try
+            {
+                var request = await _context.Requests.FirstOrDefaultAsync(r => r.Id == id);
+
+                if (request == null) { return NotFound(); }
+                if (request.Status.ToUpper() != PRSutilities.statusNew.ToUpper()) { return BadRequest(); }
+
+                if(request.Total <= 50) { request.Status = PRSutilities.statusApproved; } 
+                else { request.Status = PRSutilities.statusReview; }
+
+                await _context.SaveChangesAsync();
+
+                return request;
+            }
+            catch (SqlException sqlex)
+            {
+                return Problem($"SQL Error: {sqlex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return Problem(ex.Message);
+            }
         }
 
         // GET: api/Requests

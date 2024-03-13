@@ -5,8 +5,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PRSshawhan.Models;
 
-namespace PRSshawhan.Models
+namespace PRSshawhan.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -76,10 +77,10 @@ namespace PRSshawhan.Models
         [HttpPost]
         public async Task<ActionResult<LineItem>> PostLineItem(LineItem lineItem)
         {
-          if (_context.LineItems == null)
-          {
-              return Problem("Entity set 'PrsDbContext.LineItems'  is null.");
-          }
+            if (_context.LineItems == null)
+            {
+                return Problem("Entity set 'PrsDbContext.LineItems'  is null.");
+            }
             _context.LineItems.Add(lineItem);
             await _context.SaveChangesAsync();
 

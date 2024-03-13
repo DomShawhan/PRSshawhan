@@ -20,15 +20,28 @@ namespace PRSshawhan.Controllers
             _context = context;
         }
 
+        // GET: api/Products/5
+        // https://server/api/products/get-product-by-partnumber/2/1T32RTS4KL
+        //[HttpGet("get-product-by-part-number/{vendorid}/{partNum}")]
+        //public async Task<ActionResult<Product>> GetProduct(int vendorid, string partNum)
+        //{
+        //    var product = await _context.Products.Include(p => p.Vendor).FirstOrDefaultAsync(p => p.PartNumber == partNum && p.VendorId == vendorid);
+
+        //    if (product == null)
+        //    {
+        //        return NotFound();
+        //    }
+
+        //    return product;
+        //}
+
+
+
         // GET: api/Products
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
         {
-            if (_context.Products == null)
-            {
-                return NotFound();
-            }
-            //todo: add try/catch
+
             return await _context.Products.Include(p => p.Vendor).ToListAsync();
         }
 

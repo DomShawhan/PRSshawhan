@@ -40,6 +40,6 @@ namespace PRSshawhan.Models
         public string? ReasonForRejection { get; set; }
 
         public User? User { get; set; }
-        public List<LineItem> LineItems { get; set; }
+        public List<LineItem>? LineItems { get; set; }
     }
 }
