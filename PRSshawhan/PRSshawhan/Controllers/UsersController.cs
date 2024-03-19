@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PRSshawhan.Models;
+using PRSshawhan.Models.DTOs;
+using PRSshawhan.Models.EF;
 
 namespace PRSshawhan.Controllers
 {
@@ -21,7 +23,19 @@ namespace PRSshawhan.Controllers
         }
 
         //todo: Post: /api/users/login  pass as body username and password
+        // POST: /api/users/login
+        [HttpPost("login")]
+        public async Task<ActionResult> PostLogin(LoginDTO loginInfo)
+        {
+            var user = await _context.Users.Where(u => u.Username == loginInfo.Username && u.Password == loginInfo.Password).FirstOrDefaultAsync();
 
+            if(user == null)
+            {
+                return BadRequest();
+            }
+
+            return Ok(user);
+        }
 
 
         // GET: api/Users

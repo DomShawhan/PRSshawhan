@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using PRSshawhan.Models.EF;
 
 namespace PRSshawhan.Models
 {

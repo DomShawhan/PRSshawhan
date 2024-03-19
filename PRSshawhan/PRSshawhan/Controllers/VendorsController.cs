@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PRSshawhan.Models;
+using PRSshawhan.Models.DTOs;
+using PRSshawhan.Models.EF;
 
 namespace PRSshawhan.Controllers
 {
@@ -14,10 +16,35 @@ namespace PRSshawhan.Controllers
     public class VendorsController : ControllerBase
     {
         private readonly PrsDbContext _context;
-
+        // Constructors
         public VendorsController(PrsDbContext context)
         {
             _context = context;
+        }
+
+        // POST: api/vendors/code/{code}
+        [HttpPost("code")]
+        public async Task<ActionResult> GetVendorByCode([FromBody] string vendorcode)
+        { 
+            var vendor = await _context.Vendors.Where( v => v.Code == vendorcode ).FirstOrDefaultAsync();
+            
+            if(vendor == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(vendor);
+        }
+
+        // POST: api/vendors/byCityState
+        [HttpPost("byCityState")]
+        public async Task<ActionResult> GetVendorsByCityState([FromBody] CityStateDTO location)
+        {
+            // find all vendors in a city and state
+            var vendors = await _context.Vendors.Where(v => v.City == location.City && v.State == location.State).ToListAsync();
+
+            // return all vendors in a city and state
+            return Ok(vendors);
         }
 
         // GET: api/Vendors

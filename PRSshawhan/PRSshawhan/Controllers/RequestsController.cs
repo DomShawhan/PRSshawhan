@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using PRSshawhan.Models;
+using PRSshawhan.Models.EF;
 
 namespace PRSshawhan.Controllers
 {
@@ -24,7 +25,7 @@ namespace PRSshawhan.Controllers
         [HttpPost("reject/{id}")]
         public async Task<ActionResult<Request>> PostReject(int id, [FromBody]string reason)
         {
-            //todo: only Reviewrs can Reject
+            //todo: only Reviewers can Reject
             try
             {
                 var req = await _context.Requests.FindAsync(id);

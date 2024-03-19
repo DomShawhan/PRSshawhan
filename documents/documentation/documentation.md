@@ -15,12 +15,12 @@ RECEIVE:
 [
     {
         "id": 1,
-        "username": "dshawhan",
+        "username": "mrbison",
         "password": "mysecret",
-        "firstname": "Dominic",
-        "lastname": "Shawhan",
-        "phone": "859-412-0590",
-        "email": "dfshawhan@yahoo.com",
+        "firstname": "Stuffed",
+        "lastname": "Bison",
+        "phone": null,
+        "email": "stuffedbison@mr.com",
         "reviewer": true,
         "admin": true
     },
@@ -42,12 +42,12 @@ RECEIVE:
 ```json
 {
     "id": 1,
-    "username": "dshawhan",
+    "username": "mrbison",
     "password": "mysecret",
-    "firstname": "Dominic",
-    "lastname": "Shawhan",
-    "phone": "859-412-0590",
-    "email": "dfshawhan@yahoo.com",
+    "firstname": "Stuffed",
+    "lastname": "Bison",
+    "phone": null,
+    "email": "stuffedbison@mr.com",
     "reviewer": true,
     "admin": true
 }

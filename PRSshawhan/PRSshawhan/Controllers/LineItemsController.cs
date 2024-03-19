@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PRSshawhan.Models;
+using PRSshawhan.Models.EF;
 
 namespace PRSshawhan.Controllers
 {

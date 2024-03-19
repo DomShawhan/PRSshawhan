@@ -86,7 +86,6 @@ INSERT INTO Request (UserId, Description, Justification, DateNeeded) Values (2, 
 INSERT INTO Request (UserId, Description, Justification, DateNeeded) Values (3, 'Laptop and monitor', 'Setting up a home office', '2024/06/01');
 INSERT INTO Request (UserId, Description, Justification, DateNeeded) Values (3, 'Laptop and monitor', 'Setting up a home office', '2024/06/01');
 INSERT INTO Request (UserId, Description, Justification, DateNeeded) Values (3, 'Laptop and monitor', 'Setting up a home office', '2024/06/01');
-Update Request Set Total = 25 Where id = 8
 
 SELECT * FROM Request;
 GO

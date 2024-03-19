@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace PRSshawhan.Models
+namespace PRSshawhan.Models.EF
 {
     [Table("LineItem")]
     public class LineItem
