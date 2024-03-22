@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using PRSshawhan.Models;
 using PRSshawhan.Models.DTOs;
-using PRSshawhan.Models.EF;
 
 namespace PRSshawhan.Controllers
 {
@@ -21,83 +16,110 @@ namespace PRSshawhan.Controllers
         {
             _context = context;
         }
-
-        // POST: api/vendors/code/{code}
-        [HttpPost("code")]
-        public async Task<ActionResult> GetVendorByCode([FromBody] string vendorcode)
-        { 
-            var vendor = await _context.Vendors.Where( v => v.Code == vendorcode ).FirstOrDefaultAsync();
-            
-            if(vendor == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(vendor);
-        }
-
-        // POST: api/vendors/byCityState
-        [HttpPost("byCityState")]
-        public async Task<ActionResult> GetVendorsByCityState([FromBody] CityStateDTO location)
+        // Get vendor summary for one vendor
+        // returns the vendor code, vendor name, and the count of products (VendorSummaryDTO)
+        // GET: api/vendors/vendorsummary/{id}
+        [HttpGet("vendorsummary/{id}")]
+        public async Task<ActionResult<VendorSummaryDTO>> GetVendorSummary(int id)
         {
-            // find all vendors in a city and state
-            var vendors = await _context.Vendors.Where(v => v.City == location.City && v.State == location.State).ToListAsync();
+            try
+            {
+                var vendor = await _context.Vendors.Include(v => v.Products).Where(v => v.Id == id).Select(v => new VendorSummaryDTO(v.Code, v.Name, v.Products.Count)).FirstOrDefaultAsync();
 
-            // return all vendors in a city and state
-            return Ok(vendors);
+                if (vendor == null)
+                {
+                    // returns 404 Not Found
+                    return NotFound();
+                }
+
+                return vendor;
+            }
+            catch (SqlException sqlex)
+            {
+                //returns 500 Internal Server Error
+                return Problem($"SQL Error: {sqlex.Message}");
+            }
+            catch (Exception ex)
+            {
+                //returns 500 Internal Server Error
+                return Problem(ex.Message);
+            }
         }
-
+        // Get all vendors
+        // returns a list of vendors if successfull
         // GET: api/Vendors
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Vendor>>> GetVendors()
         {
-            if (_context.Vendors == null)
+            try
             {
-                return NotFound();
+                return await _context.Vendors.Include(v => v.Products).ToListAsync();
             }
-            //todo: add try/catch
-            return await _context.Vendors.Include(v => v.Products).ToListAsync();
+            catch (SqlException sqlex)
+            {
+                //returns 500 Internal Server Error
+                return Problem($"SQL Error: {sqlex.Message}");
+            }
+            catch (Exception ex)
+            {
+                //returns 500 Internal Server Error
+                return Problem(ex.Message);
+            }
         }
-
+        // Get vendor by id
+        // returns a single vendor if successfull
         // GET: api/Vendors/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Vendor>> GetVendor(int id)
         {
-            if (_context.Vendors == null)
+            try
             {
-                return NotFound();
-            }
-            //todo: add try/catch
-            var vendor = await _context.Vendors.Include(v => v.Products).FirstOrDefaultAsync(v => v.Id == id);
+                var vendor = await _context.Vendors.Include(v => v.Products).FirstOrDefaultAsync(v => v.Id == id);
 
-            if (vendor == null)
+                if (vendor == null)
+                {
+                    // returns 404 Not Found
+                    return NotFound();
+                }
+
+                return vendor;
+            }
+            catch (SqlException sqlex)
             {
-                return NotFound();
+                //returns 500 Internal Server Error
+                return Problem($"SQL Error: {sqlex.Message}");
             }
-
-            return vendor;
+            catch (Exception ex)
+            {
+                //returns 500 Internal Server Error
+                return Problem(ex.Message);
+            }
         }
-
+        // update vendor
+        // returns a 204 NoContent code if successfull
         // PUT: api/Vendors/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutVendor(int id, Vendor vendor)
         {
+           
             if (id != vendor.Id)
             {
+                // returns 400 - Bad Request
                 return BadRequest();
             }
-
-            _context.Entry(vendor).State = EntityState.Modified;
-
             try
             {
+                _context.Entry(vendor).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
+                // returns a 204 No Content
+                return NoContent();
             }
             catch (DbUpdateConcurrencyException)
             {
                 if (!VendorExists(id))
                 {
+                    // returns 404 Not Found
                     return NotFound();
                 }
                 else
@@ -105,45 +127,73 @@ namespace PRSshawhan.Controllers
                     throw;
                 }
             }
-
-            return NoContent();
+            catch (SqlException sqlex)
+            {
+                //returns 500 Internal Server Error
+                return Problem($"SQL Error: {sqlex.Message}");
+            }
+            catch (Exception ex)
+            {
+                //returns 500 Internal Server Error
+                return Problem(ex.Message);
+            }
         }
-
+        // insert new vendor
+        // returns the new vendors if successfull
         // POST: api/Vendors
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<Vendor>> PostVendor(Vendor vendor)
         {
-            if (_context.Vendors == null)
+            try
             {
-                return Problem("Entity set 'PrsDbContext.Vendors'  is null.");
+                _context.Vendors.Add(vendor);
+                await _context.SaveChangesAsync();
+
+                return CreatedAtAction("GetVendor", new { id = vendor.Id }, vendor);
             }
-            _context.Vendors.Add(vendor);
-            //todo: add try/catch
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetVendor", new { id = vendor.Id }, vendor);
+            catch (SqlException sqlex)
+            {
+                //returns 500 Internal Server Error
+                return Problem($"SQL Error: {sqlex.Message}");
+            }
+            catch (Exception ex)
+            {
+                //returns 500 Internal Server Error
+                return Problem(ex.Message);
+            }
         }
-
+        // delete vendor
+        // returns a 204 NoContent code if successfull
         // DELETE: api/Vendors/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteVendor(int id)
         {
-            if (_context.Vendors == null)
+            try
             {
-                return NotFound();
+                var vendor = await _context.Vendors.FirstOrDefaultAsync(v => v.Id == id);
+                if (vendor == null)
+                {
+                    // returns 404 Not Found
+                    return NotFound();
+                }
+
+                _context.Vendors.Remove(vendor);
+
+                await _context.SaveChangesAsync();
+                // returns a 204 No Content
+                return NoContent();
             }
-            var vendor = await _context.Vendors.FindAsync(id);
-            if (vendor == null)
+            catch (SqlException sqlex)
             {
-                return NotFound();
+                //returns 500 Internal Server Error
+                return Problem($"SQL Error: {sqlex.Message}");
             }
-
-            _context.Vendors.Remove(vendor);
-            //todo: add try/catch
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            catch (Exception ex)
+            {
+                //returns 500 Internal Server Error
+                return Problem(ex.Message);
+            }
         }
 
         private bool VendorExists(int id)

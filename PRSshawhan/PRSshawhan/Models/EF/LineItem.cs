@@ -18,6 +18,7 @@ namespace PRSshawhan.Models.EF
         [Required]
         [Range(0, int.MaxValue)]
         public int Quantity { get; set; } = 1;
+
         // navigation properties
         public Request? Request { get; set; }
         public Product? Product { get; set; }

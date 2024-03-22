@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using PRSshawhan.Models;
-using PRSshawhan.Models.EF;
+using PRSshawhan.Models.Utilities;
 
 namespace PRSshawhan.Controllers
 {
@@ -21,19 +16,23 @@ namespace PRSshawhan.Controllers
         {
             _context = context;
         }
+        // Rejects the request
+        // Requires a rejection reason which is passed into the body
+        // If successful, return the request
         // POST: api/requests/reject/{id}
         [HttpPost("reject/{id}")]
         public async Task<ActionResult<Request>> PostReject(int id, [FromBody]string reason)
         {
-            //todo: only Reviewers can Reject
             try
             {
-                var req = await _context.Requests.FindAsync(id);
+                var req = await _context.Requests.FirstOrDefaultAsync(r => r.Id == id);
                 if(req == null) { return NotFound("Request not found"); }
-
+                //Check that the body includes a reason
                 if(reason == null | reason == string.Empty) { return BadRequest(); }
+                //Make sure the request status is Review
                 if(req.Status.ToUpper() != PRSutilities.statusReview.ToUpper()) { return BadRequest(); }
 
+                //Reject the request
                 req.Status = PRSutilities.statusRejected;
                 req.ReasonForRejection = reason;
 
@@ -43,67 +42,87 @@ namespace PRSshawhan.Controllers
             }
             catch(SqlException sqlex)
             {
+                //returns 500 Internal Server Error
                 return Problem($"SQL Error: {sqlex.Message}");
             }
             catch(Exception ex)
             {
+                //returns 500 Internal Server Error
                 return Problem(ex.Message);
             }
         }
+        //Approves the request
+        //If successful, return the request
         //POST: api/requests/approve/id
         [HttpPost("approve/{id}")]
         public async Task<ActionResult<Request>> PostApprove(int id)
         {
             try
             {
-                var request = await _context.Requests.FindAsync(id);
+                var request = await _context.Requests.FirstOrDefaultAsync(r => r.Id == id);
                 if(request == null) { return NotFound(); }
-                if(request.Status.ToUpper() != PRSutilities.statusReview.ToUpper()) { return BadRequest(); }
+                //Make sure the request status is Review
+                if (request.Status.ToUpper() != PRSutilities.statusReview.ToUpper()) { return BadRequest(); }
+                //Approve the request
                 request.Status = PRSutilities.statusApproved;
                 await _context.SaveChangesAsync();
                 return request;
             }
             catch (SqlException sqlex)
             {
+                //returns 500 Internal Server Error
                 return Problem($"SQL Error: {sqlex.Message}");
             }
             catch (Exception ex)
             {
+                //returns 500 Internal Server Error
                 return Problem(ex.Message);
             }
         }
-
-        //GET: api/Requests/reviews/{userid}
+        // Get all requests that are submitted for review and have not been placed by the current user
+        // returns a list of requests if successfull
+        // GET: api/Requests/reviews/{userid}
         [HttpGet("reviews/{userid}")]
         public async Task<ActionResult<IEnumerable<Request>>> GetReviews(int userid)
         {
             try
-            {
+            { 
                 var requests = await _context.Requests.Where(r => r.UserId != userid && r.Status.ToUpper() == PRSutilities.statusReview.ToUpper()).Include(r => r.User).ToListAsync();
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userid);
 
+                if(user == null || !user.Reviewer)
+                {
+                    // returns a 400 Bad Request
+                    return BadRequest();
+                }
                 return requests;
             }
             catch (SqlException sqlex)
             {
+                //returns 500 Internal Server Error
                 return Problem($"SQL Error: {sqlex.Message}");
             }
             catch (Exception ex)
             {
+                //returns 500 Internal Server Error
                 return Problem(ex.Message);
             }
         }
-
-        //POST: api/requests/review/{id}
+        // Submit a request to review
+        // returns a request if successfull
+        // POST: api/requests/review/{id}
         [HttpPost("review/{id}")]
         public async Task<ActionResult<Request>> PostReviews(int id)
         {
             try
             {
-                var request = await _context.Requests.FirstOrDefaultAsync(r => r.Id == id);
+                Request? request = await _context.Requests.FirstOrDefaultAsync(r => r.Id == id);
 
                 if (request == null) { return NotFound(); }
+                // Make sure the request status is New
                 if (request.Status.ToUpper() != PRSutilities.statusNew.ToUpper()) { return BadRequest(); }
 
+                //if the total of the request is $50 or less, approve the request otherwise set the request status to review
                 if(request.Total <= 50) { request.Status = PRSutilities.statusApproved; } 
                 else { request.Status = PRSutilities.statusReview; }
 
@@ -113,35 +132,68 @@ namespace PRSshawhan.Controllers
             }
             catch (SqlException sqlex)
             {
+                //returns 500 Internal Server Error
                 return Problem($"SQL Error: {sqlex.Message}");
             }
             catch (Exception ex)
             {
+                //returns 500 Internal Server Error
                 return Problem(ex.Message);
             }
         }
-
+        // Get all Requests
+        // returns a list of requests if successfull
         // GET: api/Requests
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Request>>> GetRequests()
-        { 
-            return await _context.Requests.Include(r => r.User).Include(r => r.LineItems).ThenInclude(r => r.Product).ToListAsync();
+        {
+            try
+            {
+                return await _context.Requests.Include(r => r.User).Include(r => r.LineItems).ThenInclude(r => r.Product).ToListAsync();
+            }
+            catch (SqlException sqlex)
+            {
+                //returns 500 Internal Server Error
+                return Problem($"SQL Error: {sqlex.Message}");
+            }
+            catch (Exception ex)
+            {
+                //returns 500 Internal Server Error
+                return Problem(ex.Message);
+            }
         }
-
+        // Get request by ID
+        // returns a single Request if successfull
         // GET: api/Requests/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Request>> GetRequest(int id)
         {
-            var request = await _context.Requests.Include(r => r.User).Include(r => r.LineItems).ThenInclude(r => r.Product).FirstOrDefaultAsync(r => r.Id == id);
-
-            if (request == null)
+            try
             {
-                return NotFound();
+                Request? request = await _context.Requests.Include(r => r.User).Include(r => r.LineItems).ThenInclude(r => r.Product).FirstOrDefaultAsync(r => r.Id == id);
+
+                if (request == null)
+                {
+                    // returns 404 Not Found
+                    return NotFound();
+                }
+
+                return request;
+            }
+            catch (SqlException sqlex)
+            {
+                //returns 500 Internal Server Error
+                return Problem($"SQL Error: {sqlex.Message}");
+            }
+            catch (Exception ex)
+            {
+                //returns 500 Internal Server Error
+                return Problem(ex.Message);
             }
 
-            return request;
         }
-
+        // Update Request
+        // returns 204 NoContent code if successfull
         // PUT: api/Requests/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
@@ -149,19 +201,21 @@ namespace PRSshawhan.Controllers
         {
             if (id != request.Id)
             {
+                // returns a 400 Bad Request
                 return BadRequest();
             }
-
-            _context.Entry(request).State = EntityState.Modified;
-
             try
             {
+                _context.Entry(request).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
+                //returns a 204 No Content
+                return NoContent();
             }
             catch (DbUpdateConcurrencyException)
             {
                 if (!RequestExists(id))
                 {
+                    // returns 404 Not Found
                     return NotFound();
                 }
                 else
@@ -169,43 +223,72 @@ namespace PRSshawhan.Controllers
                     throw;
                 }
             }
-
-            return NoContent();
+            catch (SqlException sqlex)
+            {
+                //returns 500 Internal Server Error
+                return Problem($"SQL Error: {sqlex.Message}");
+            }
+            catch (Exception ex)
+            {
+                //returns 500 Internal Server Error
+                return Problem(ex.Message);
+            }
         }
-
+        // Insert new Request
+        // returns the newly created request if successfull
         // POST: api/Requests
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<Request>> PostRequest(Request request)
         {
-          if (_context.Requests == null)
-          {
-              return Problem("Entity set 'PrsDbContext.Requests'  is null.");
-          }
-            _context.Requests.Add(request);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetRequest", new { id = request.Id }, request);
+            try
+            {
+                _context.Requests.Add(request);
+                await _context.SaveChangesAsync();
+                // returns the newly created resource
+                return CreatedAtAction("GetRequest", new { id = request.Id }, request);
+            }
+            catch (SqlException sqlex)
+            {
+                //returns 500 Internal Server Error
+                return Problem($"SQL Error: {sqlex.Message}");
+            }
+            catch (Exception ex)
+            {
+                //returns 500 Internal Server Error
+                return Problem(ex.Message);
+            }
         }
-
+        //Delete Request
+        // returns 204 NoContent code if successfull
         // DELETE: api/Requests/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteRequest(int id)
         {
-            if (_context.Requests == null)
+            try
             {
-                return NotFound();
+                Request? request = await _context.Requests.FirstOrDefaultAsync(r => r.Id == id);
+                if (request == null)
+                {
+                    // returns 404 Not Found
+                    return NotFound();
+                }
+
+                _context.Requests.Remove(request);
+                await _context.SaveChangesAsync();
+                //Returns a 204 No content
+                return NoContent();
             }
-            var request = await _context.Requests.FindAsync(id);
-            if (request == null)
+            catch (SqlException sqlex)
             {
-                return NotFound();
+                //returns 500 Internal Server Error
+                return Problem($"SQL Error: {sqlex.Message}");
             }
-
-            _context.Requests.Remove(request);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            catch (Exception ex)
+            {
+                //returns 500 Internal Server Error
+                return Problem(ex.Message);
+            }
         }
 
         private bool RequestExists(int id)

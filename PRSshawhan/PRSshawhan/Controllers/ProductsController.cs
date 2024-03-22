@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using PRSshawhan.Models;
-using PRSshawhan.Models.EF;
 
 namespace PRSshawhan.Controllers
 {
@@ -20,52 +15,58 @@ namespace PRSshawhan.Controllers
         {
             _context = context;
         }
-
-        // GET: api/Products/5
-        // https://server/api/products/get-product-by-partnumber/2/1T32RTS4KL
-        //[HttpGet("get-product-by-part-number/{vendorid}/{partNum}")]
-        //public async Task<ActionResult<Product>> GetProduct(int vendorid, string partNum)
-        //{
-        //    var product = await _context.Products.Include(p => p.Vendor).FirstOrDefaultAsync(p => p.PartNumber == partNum && p.VendorId == vendorid);
-
-        //    if (product == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    return product;
-        //}
-
-
-
+        // Get a all products
+        // returns a list of product if successfull
         // GET: api/Products
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
         {
-
-            return await _context.Products.Include(p => p.Vendor).ToListAsync();
+            try
+            {
+                return await _context.Products.Include(p => p.Vendor).ToListAsync();
+            }
+            catch (SqlException sqlex)
+            {
+                //returns 500 Internal Server Error
+                return Problem($"SQL Error: {sqlex.Message}");
+            }
+            catch (Exception ex)
+            {
+                //returns 500 Internal Server Error
+                return Problem(ex.Message);
+            }
         }
-
+        // Get Product by ID
+        // returns a single product if successfull
         // GET: api/Products/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(int id)
         {
-            //if (_context.Products == null)
-            //{
-            //    return NotFound();
-            //}
-
-            //.Include(p => p.Vendor)
-            var product = await _context.Products.Include(p => p.Vendor).FirstOrDefaultAsync(p => p.Id == id);
-
-            if (product == null)
+            try
             {
-                return NotFound();
+                var product = await _context.Products.Include(p => p.Vendor).FirstOrDefaultAsync(p => p.Id == id);
+
+                if (product == null)
+                {
+                    // returns 404 Not Found
+                    return NotFound();
+                }
+
+                return product;
             }
-
-            return product;
+            catch (SqlException sqlex)
+            {
+                //returns 500 Internal Server Error
+                return Problem($"SQL Error: {sqlex.Message}");
+            }
+            catch (Exception ex)
+            {
+                //returns 500 Internal Server Error
+                return Problem(ex.Message);
+            }
         }
-
+        // Update a product
+        // returns a 204 NoContent code if successfull
         // PUT: api/Products/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
@@ -73,19 +74,22 @@ namespace PRSshawhan.Controllers
         {
             if (id != product.Id)
             {
+                // Returns a 400 Badd Request
                 return BadRequest();
             }
 
-            _context.Entry(product).State = EntityState.Modified;
-
             try
             {
+                _context.Entry(product).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
+                // returns a 204 No Content
+                return NoContent();
             }
             catch (DbUpdateConcurrencyException)
             {
                 if (!ProductExists(id))
                 {
+                    // returns 404 Not Found
                     return NotFound();
                 }
                 else
@@ -93,45 +97,72 @@ namespace PRSshawhan.Controllers
                     throw;
                 }
             }
-
-            return NoContent();
+            catch (SqlException sqlex)
+            {
+                //returns 500 Internal Server Error
+                return Problem($"SQL Error: {sqlex.Message}");
+            }
+            catch (Exception ex)
+            {
+                //returns 500 Internal Server Error
+                return Problem(ex.Message);
+            }
         }
-
+        // Insert a new product
+        // returns the new project if successfull
         // POST: api/Products
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<Product>> PostProduct(Product product)
         {
-          if (_context.Products == null)
-          {
-              return Problem("Entity set 'PrsDbContext.Products'  is null.");
-          }
-            _context.Products.Add(product);
-            //todo: add try/catch
-            await _context.SaveChangesAsync();
+            try
+            {
+                _context.Products.Add(product);
+                await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetProduct", new { id = product.Id }, product);
+                return CreatedAtAction("GetProduct", new { id = product.Id }, product);
+            }
+            catch (SqlException sqlex)
+            {
+                //returns 500 Internal Server Error
+                return Problem($"SQL Error: {sqlex.Message}");
+            }
+            catch (Exception ex)
+            {
+                //returns 500 Internal Server Error
+                return Problem(ex.Message);
+            }
         }
-
+        // Delete a product
+        // returns a 204 NoContent code if successfull
         // DELETE: api/Products/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
-            if (_context.Products == null)
+            try
             {
-                return NotFound();
+                var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
+                if (product == null)
+                {
+                    // returns 404 Not Found
+                    return NotFound();
+                }
+
+                _context.Products.Remove(product);
+                await _context.SaveChangesAsync();
+                // returns a 204 No Content
+                return NoContent();
             }
-            var product = await _context.Products.FindAsync(id);
-            if (product == null)
+            catch (SqlException sqlex)
             {
-                return NotFound();
+                //returns 500 Internal Server Error
+                return Problem($"SQL Error: {sqlex.Message}");
             }
-
-            _context.Products.Remove(product);
-            //todo: add try/catch
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            catch (Exception ex)
+            {
+                //returns 500 Internal Server Error
+                return Problem(ex.Message);
+            }
         }
 
         private bool ProductExists(int id)

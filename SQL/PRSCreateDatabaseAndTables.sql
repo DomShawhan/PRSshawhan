@@ -81,11 +81,11 @@ CREATE TABLE Request (
 )
 GO
 
-INSERT INTO Request (UserId, Description, Justification, DateNeeded) Values (3, 'Laptop', 'Old Laptop broke', '2024/06/01');
-INSERT INTO Request (UserId, Description, Justification, DateNeeded) Values (2, 'Paper', 'Out of Paper', '2024/06/01');
-INSERT INTO Request (UserId, Description, Justification, DateNeeded) Values (3, 'Laptop and monitor', 'Setting up a home office', '2024/06/01');
-INSERT INTO Request (UserId, Description, Justification, DateNeeded) Values (3, 'Laptop and monitor', 'Setting up a home office', '2024/06/01');
-INSERT INTO Request (UserId, Description, Justification, DateNeeded) Values (3, 'Laptop and monitor', 'Setting up a home office', '2024/06/01');
+INSERT INTO Request (UserId, Description, Justification, DateNeeded, Total) Values (3, 'Laptop', 'Old Laptop broke', '2024/06/01', 1799.99);
+INSERT INTO Request (UserId, Description, Justification, DateNeeded, Total) Values (2, 'Paper', 'Out of Paper', '2024/06/01', 75);
+INSERT INTO Request (UserId, Description, Justification, DateNeeded, Total) Values (3, 'Laptop and monitor', 'Setting up a home office', '2024/06/01', 2319.97);
+INSERT INTO Request (UserId, Description, Justification, DateNeeded, Total) Values (3, 'Laptop and monitor', 'Setting up a home office', '2024/06/01', 2059.98);
+INSERT INTO Request (UserId, Description, Justification, DateNeeded, Total) Values (3, 'Laptop and monitor', 'Setting up a home office', '2024/06/01', 2059.98);
 
 SELECT * FROM Request;
 GO
@@ -104,6 +104,15 @@ INSERT INTO LineItem(RequestId, ProductId, Quantity) VALUES (3, 1, 1);
 INSERT INTO LineItem(RequestId, ProductId, Quantity) VALUES (3, 3, 2);
 INSERT INTO LineItem(RequestId, ProductId, Quantity) VALUES (1, 1, 1);
 INSERT INTO LineItem(RequestId, ProductId, Quantity) VALUES (2, 2, 5);
+INSERT INTO LineItem(RequestId, ProductId, Quantity) VALUES (4, 1, 1);
+INSERT INTO LineItem(RequestId, ProductId, Quantity) VALUES (4, 3, 1);
+INSERT INTO LineItem(RequestId, ProductId, Quantity) VALUES (5, 1, 1);
+INSERT INTO LineItem(RequestId, ProductId, Quantity) VALUES (5, 3, 1);
 
 SELECT * FROM LineItem;
 
+--DROP TABLE LineItem;
+--DROP TABLE Request;
+--DROP TABLE Product;
+--DROP TABLE Vendor;
+--DROP TABLE [User]

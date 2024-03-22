@@ -16,7 +16,7 @@ namespace PRSshawhan.Models
 
         [Required]
         [StringLength(10)]
-        public string Password { get; set; } //todo: encrypt this
+        public string Password { get; set; }
 
         [Required]
         [StringLength (20)]
