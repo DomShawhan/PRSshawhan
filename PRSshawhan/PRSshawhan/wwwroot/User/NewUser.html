@@ -1,0 +1,154 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>PRS New User</title>
+    <link href="/stylesheets/styling.css" rel="stylesheet" />
+
+    <script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-3.6.0.js"></script>
+    <script src="/scripts/Validation.js" ></script>
+</head>
+<body>
+    <nav>
+        <div class="nav-item">
+            <a href="/Request/RequestsList.html">Requests</a>
+        </div>
+        <div class="nav-item">
+            <a href="/LineItem/ListLineItems.html">Line Items</a>
+        </div>
+        <div class="nav-item">
+            <a href="/Product/ProductsList.html">Products</a>
+        </div>
+        <div class="nav-item">
+            <a href="/Vendor/VendorsList.html">Vendors</a>
+        </div>
+        <div class="nav-item">
+            <a href="/User/ListUser.html">Users</a>
+        </div>
+    </nav>
+
+    <h1>Create a New User</h1>
+    <main>
+        <form id="newUserForm">
+
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required />
+            <div id="username-error" class="red"></div>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required />
+            <div id="password-error" class="red"></div>
+
+            <label for="firstname">First Name:</label>
+            <input type="text" id="firstname" name="firstname" required />
+            <div id="firstname-error" class="red"></div>
+
+            <label for="lastname">Last Name:</label>
+            <input type="text" id="lastname" name="lastname" required />
+            <div id="lastname-error" class="red"></div>
+
+            <label for="phone">Phone:</label>
+            <input type="text" id="phone" name="phone" />
+            <div id="phone-error" class="red"></div>
+
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" />
+            <div id="email-error" class="red"></div>
+
+            <label for="reviewer-true">Reviewer:</label>
+            <input type="hidden" id="reviewer-false" name="reviewer" value="false" />
+            <input type="checkbox" id="reviewer-true" name="reviewer" value="true" />
+            <br>
+            <label for="admin-true">Admin:</label>
+            <input type="hidden" id="admin-false" name="admin" value="false" />
+            <input type="checkbox" id="admin-true" name="admin" value="true" />
+            <br>
+        </form>
+        <button onclick="SaveUser()">Save</button>
+        <div id="output"></div>
+
+    </main>
+    <script>
+        const username = $("#username");
+        const password = $("#password");
+        const firstname = $("#firstname");
+        const lastname = $("#lastname");
+        const phone = $("#phone");
+        const email = $("#email");
+        // add event listeners to validate the data as it is inputted
+        username.on("input", (e) => checkLength(e.target.id, e.target.value, e.target.required, 20));
+        password.on("input", (e) => checkLength(e.target.id, e.target.value, e.target.required, 10));
+        firstname.on("input", (e) => checkLength(e.target.id, e.target.value, e.target.required, 20));
+        lastname.on("input", (e) => checkLength(e.target.id, e.target.value, e.target.required, 20));
+        phone.on("input", (e) => checkLength(e.target.id, e.target.value, e.target.required, 12));
+        email.on("input", (e) => checkLength(e.target.id, e.target.value, e.target.required, 75));
+
+        function SaveUser() {
+            const theForm = document.getElementById("newUserForm");
+
+            let formData = new FormData(theForm);
+            let errors = 0;
+            //Validate the required data
+            errors += checkLength("username", username.val(), username[0].required, 20);
+            errors += checkLength("password", password.val(), password[0].required, 10);
+            errors += checkLength("firstname", firstname.val(), firstname[0].required, 20);
+            errors += checkLength("lastname", lastname.val(), lastname[0].required, 20);
+            errors += checkLength("phone", phone.val(), phone[0].required, 12);
+            errors += checkLength("email", email.val(), email[0].required, 75);
+            if (errors > 0) {
+                return;
+            }
+            //hide any previous validation errors
+            $("#username-error").html("");
+            $("#password-error").html("");
+            $("#firstname-error").html("");
+            $("#lastname-error").html("");
+            //convert to JSON
+            let jsonString = JSON.stringify(Object.fromEntries(formData.entries()));
+            //clean the JSON
+            jsonString = jsonString.replaceAll("\"false\"", "false");
+            jsonString = jsonString.replaceAll("\"true\"", "true");
+            jsonString = jsonString.replaceAll("\"\"", "null");
+            console.log(jsonString)
+
+            //setup the XMLHttpRequest
+            let xhr = new XMLHttpRequest();
+            xhr.open("POST", "/api/users");
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            xhr.onreadystatechange = function () {
+                switch (xhr.readyState) {
+                    case XMLHttpRequest.DONE:
+                        let output = $("#output");
+                        console.log(xhr);
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            if (!output[0].classList.contains("green")) {
+                                output[0].classList.add("green");
+                            }
+                            if (output[0].classList.contains("red")) {
+                                output[0].classList.remove("red");
+                            }
+                            theForm.reset();
+                            output.html("Call completed successfully: <br>" + xhr.response);
+                        } else {
+                            if (!output[0].classList.contains("red")) {
+                                output[0].classList.add("red");
+                            }
+                            if (output[0].classList.contains("green")) {
+                                output[0].classList.remove("green");
+                            }
+                            output.html("An error occurred.<br><br>" + xhr.response);
+                        }
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+
+            //send the form data to the server
+            xhr.send(jsonString);
+        }
+    </script>
+</body>
+</html>

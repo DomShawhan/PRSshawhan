@@ -76,7 +76,7 @@ CREATE TABLE Request (
 	DeliveryMode varchar(25) not null default 'Pickup',
 	Status varchar(20) not null default 'NEW',
 	Total decimal(10, 2) not null default 0,
-	SubmittedDate datetime not null default GetDate(),
+	SubmittedDate datetime not null default CurDate(),
 	ReasonForRejection varchar(100) null
 )
 GO
@@ -111,8 +111,8 @@ INSERT INTO LineItem(RequestId, ProductId, Quantity) VALUES (5, 3, 1);
 
 SELECT * FROM LineItem;
 
---DROP TABLE LineItem;
---DROP TABLE Request;
---DROP TABLE Product;
---DROP TABLE Vendor;
---DROP TABLE [User]
+-- DROP TABLE LineItem;
+-- DROP TABLE Request;
+-- DROP TABLE Product;
+-- DROP TABLE Vendor;
+-- DROP TABLE [User]
